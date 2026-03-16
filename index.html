@@ -1,45 +1,119 @@
 <!DOCTYPE html>
-<html>
+<html lang="bn">
 <head>
-<title>Eid Salami</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eid Salami</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
 
-<style>
-body{
-text-align:center;
-font-family:Arial;
-background:#f5f5f5;
-margin-top:100px;
-}
+        .card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            max-width: 350px;
+            width: 90%;
+            transition: transform 0.3s;
+        }
 
-button{
-background:#e2136e;
-color:white;
-border:none;
-padding:15px 30px;
-font-size:20px;
-border-radius:10px;
-cursor:pointer;
-}
-</style>
+        .card:hover {
+            transform: translateY(-5px);
+        }
 
+        h1 {
+            color: #e2136e;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #555;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .caption {
+            font-style: italic;
+            color: #888;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+        }
+
+        .number-box {
+            background: #fdf0f6;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px dashed #e2136e;
+            margin-bottom: 25px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin: 0;
+            color: #333;
+        }
+
+        button {
+            background: #e2136e;
+            color: white;
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(226, 19, 110, 0.3);
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #c2105e;
+            box-shadow: 0 8px 20px rgba(226, 19, 110, 0.5);
+        }
+
+        .footer-text {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #e2136e;
+        }
+    </style>
 </head>
-
 <body>
 
-<h1>🌙 Eid Mubarak</h1>
-<h2>Send Me Salami 😄</h2>
+    <div class="card">
+        <h1>Eid Mubarak! 🌙</h1>
+        <h2>সালামি না দিলে কিন্তু দাওয়াত নাই! 😜</h2>
+        <p class="caption">"সালামি দিলে বাড়বে সওয়াব, না দিলে হবে অভাব!"</p>
+        
+        <div class="number-box">
+            <p>bKash: <b id="number">01608426185</b></p>
+        </div>
 
-<p>bKash Number: <b id="number">01608426185</b></p>
+        <button onclick="copyNumber()">Send Salami 💸</button>
+        
+        <p class="footer-text">বাটনে ক্লিক করলে নম্বর কপি হয়ে যাবে</p>
+    </div>
 
-<button onclick="copyNumber()">Send Salami</button>
-
-<script>
-function copyNumber(){
-var number = document.getElementById("number").innerText;
-navigator.clipboard.writeText(number);
-alert("bKash number copied! Open bKash and send salami 😄");
-}
-</script>
+    <script>
+        function copyNumber() {
+            var number = document.getElementById("number").innerText;
+            navigator.clipboard.writeText(number).then(function() {
+                alert("bKash number copied! বিকাশে গিয়ে সালামি পাঠিয়ে দাও। 😍");
+            });
+        }
+    </script>
 
 </body>
 </html>
