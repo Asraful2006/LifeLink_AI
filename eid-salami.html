@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Eid Salami</title>
+
+<style>
+body{
+text-align:center;
+font-family:Arial;
+background:#f5f5f5;
+margin-top:100px;
+}
+
+button{
+background:#e2136e;
+color:white;
+border:none;
+padding:15px 30px;
+font-size:20px;
+border-radius:10px;
+cursor:pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🌙 Eid Mubarak</h1>
+<h2>Send Me Salami 😄</h2>
+
+<p>bKash Number: <b id="number">01608426185</b></p>
+
+<button onclick="copyNumber()">Send Salami</button>
+
+<script>
+function copyNumber(){
+var number = document.getElementById("number").innerText;
+navigator.clipboard.writeText(number);
+alert("bKash number copied! Open bKash and send salami 😄");
+}
+</script>
+
+</body>
+</html>
