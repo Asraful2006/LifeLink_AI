@@ -1,12 +1,13 @@
 from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
+import os
 
 app = Flask(__name__)
 
 # =========================================================
 # 1. GEMINI AI CONFIGURATION
 # =========================================================
-GEMINI_API_KEY = "AQ.Ab8RN6JGVXYaWU4QZLJilrmi_RwOL8W1f2-cTQMZAeGr1PzwUQ"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6JGVXYaWU4QZLJilrmi_RwOL8W1f2-cTQMZAeGr1PzwUQ")
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
@@ -32,7 +33,7 @@ class DonorBST:
             root.right = self.insert(root.right, donor)
         return root
 
-    # In-order traversal: কাছের ডোনারদের দূরত্ব অনুযায়ী আগে সাজিয়ে আনবে
+    # In-order traversal: কাছের ডোনারদের দূরত্ব অনুযায়ী আগে সাজিয়ে আনবে
     def get_sorted_donors(self, root, result):
         if root:
             self.get_sorted_donors(root.left, result)
@@ -66,6 +67,11 @@ donor_hash_table = {
 @app.route('/')
 def home():
     return render_template('index.html')
+
+# Admin Route: View all registered users/donors
+@app.route('/admin/users')
+def admin_users():
+    return render_template('view_users.html', donor_hash_table=donor_hash_table)
 
 # API: Blood Search using Hash Table & BST Sorting
 @app.route('/api/request-blood', methods=['POST'])

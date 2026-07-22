@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Registered Donors</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 40px; }
+        h2 { color: #d9534f; }
+        table { width: 100%; border-collapse: collapse; background: #fff; margin-top: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #d9534f; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .back-btn { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #333; color: #fff; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <a href="/" class="back-btn">← Back to Home</a>
+    <h2>Admin Dashboard - Registered Donors List</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Blood Group</th>
+                <th>Location</th>
+                <th>Distance (km)</th>
+                <th>Phone</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for blood, donors in donor_hash_table.items() %}
+                {% for donor in donors %}
+                <tr>
+                    <td>{{ donor.id }}</td>
+                    <td>{{ donor.name }}</td>
+                    <td>{{ donor.blood }}</td>
+                    <td>{{ donor.location }}</td>
+                    <td>{{ donor.distance }}</td>
+                    <td>{{ donor.phone }}</td>
+                </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
