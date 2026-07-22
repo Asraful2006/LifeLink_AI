@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeLink AI - Smart Emergency Medical Platform</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+
+    <!-- Showcase Navigation Bar for Quick Testing/Presentation -->
+    <div class="bg-dark text-white p-2 text-center small shadow-sm d-flex flex-wrap justify-content-between align-items-center px-3">
+        <span class="fw-bold text-warning"><i class="fa-solid fa-flask"></i> Showcase Mode: LifeLink AI</span>
+        <div class="btn-group btn-group-sm mt-1 mt-md-0" role="group">
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="navigate('step1')">1. Landing</button>
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="navigate('step2')">2. Login / Register</button>
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="navigate('step3')">3. Dashboard</button>
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="navigate('step4')">4. Request Blood</button>
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="navigate('step5')">5. AI Matching</button>
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="navigate('step6')">6. Donor Details</button>
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="navigate('step7')">7. Emergency</button>
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="navigate('step8')">8. AI Assistant</button>
+        </div>
+    </div>
+
+    <!-- Step 1: Landing Page -->
+    <div id="step1" class="view-section">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+            <div class="container">
+                <a class="navbar-brand text-danger fw-bold fs-4" href="#">
+                    <i class="fa-solid fa-heart-pulse"></i> LifeLink AI
+                </a>
+                <button class="btn btn-danger px-4" onclick="navigate('step2')">Login / Register</button>
+            </div>
+        </nav>
+
+        <div class="container mt-5">
+            <div class="row align-items-center">
+                <div class="col-md-6 mb-4 mb-md-0">
+                    <h1 class="display-5 fw-bold">AI-Powered <br><span class="text-danger">Blood & Medical Assistance</span></h1>
+                    <p class="text-muted mt-3 fs-5">Find blood donors, nearby hospitals, and get emergency help instantly using intelligent AI matching.</p>
+                    <button class="btn btn-danger btn-lg mt-3 px-5 py-3 rounded-pill shadow-sm" onclick="navigate('step2')">Get Started</button>
+                    
+                    <div class="d-flex mt-5 gap-4">
+                        <div><h3 class="fw-bold mb-0">10K+</h3><p class="text-muted small">Donors</p></div>
+                        <div><h3 class="fw-bold mb-0" id="landing-req-count">12</h3><p class="text-muted small">Requests</p></div>
+                        <div><h3 class="fw-bold mb-0">500+</h3><p class="text-muted small">Lives Saved</p></div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-center">
+                    <div class="blood-drop-illustration">
+                        <i class="fa-solid fa-droplet text-danger" style="font-size: 120px;"></i>
+                        <h1 class="mt-2 text-danger fw-bold">+</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Login / Register -->
+    <div id="step2" class="view-section d-none">
+        <div class="container mt-5 d-flex justify-content-center">
+            <div class="card p-4 shadow-sm" style="width: 450px; border-radius: 15px;">
+                <ul class="nav nav-pills nav-justified mb-3" id="authTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" onclick="switchAuthTab('login')">Login</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" onclick="switchAuthTab('register')">Register New User</button>
+                    </li>
+                </ul>
+
+                <!-- Login Form -->
+                <div id="login-form">
+                    <h4 class="text-center fw-bold mb-3">Welcome Back!</h4>
+                    <div class="mb-3">
+                        <label class="form-label">Email or Phone</label>
+                        <input type="text" id="login-email" class="form-control" value="arif@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" value="123456">
+                    </div>
+                    <button class="btn btn-danger w-100 py-2 mt-2" onclick="handleLogin()">Login</button>
+                </div>
+
+                <!-- Register Form -->
+                <div id="register-form" class="d-none">
+                    <h4 class="text-center fw-bold mb-3">Create Account</h4>
+                    <div class="mb-2">
+                        <label class="form-label mb-1">Full Name *</label>
+                        <input type="text" id="reg-name" class="form-control" placeholder="e.g. Tanvir Rahman">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label mb-1">Phone Number *</label>
+                        <input type="text" id="reg-phone" class="form-control" placeholder="01700000000">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label mb-1">Blood Group *</label>
+                        <select id="reg-blood" class="form-select">
+                            <option value="O+">O+</option>
+                            <option value="A+">A+</option>
+                            <option value="B+">B+</option>
+                            <option value="AB+">AB+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label mb-1">Location / Area *</label>
+                        <input type="text" id="reg-location" class="form-control" placeholder="e.g. Dhanmondi, Dhaka">
+                    </div>
+                    <button class="btn btn-danger w-100 py-2" onclick="handleRegister()">Register & Go to Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Dashboard -->
+    <div id="step3" class="view-section d-none bg-light min-vh-100 p-4">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-danger fw-bold"><i class="fa-solid fa-heart-pulse"></i> LifeLink AI</h2>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-bell text-muted me-2"></i>
+                    <h5 class="mb-0 fw-semibold" id="user-display-name">Hello, Arif 👋</h5>
+                </div>
+            </div>
+
+            <div class="row mb-4 text-center">
+                <div class="col-md-4 mb-2">
+                    <div class="card p-3 shadow-sm border-0">
+                        <h3 class="text-danger fw-bold mb-0" id="dash-active-requests">12</h3>
+                        <p class="text-muted mb-0">Active Blood Requests</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="card p-3 shadow-sm border-0">
+                        <h3 class="text-success fw-bold mb-0">156</h3>
+                        <p class="text-muted mb-0">Available Donors Near You</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="card p-3 shadow-sm border-0">
+                        <h3 class="text-primary fw-bold mb-0">24</h3>
+                        <p class="text-muted mb-0">Hospitals Nearby</p>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="mb-3 fw-bold">Quick Actions</h4>
+            <div class="row text-center">
+                <div class="col-md-3 mb-3">
+                    <button class="btn btn-danger w-100 py-4 shadow-sm border-0 rounded-3" onclick="navigate('step4')">
+                        <i class="fa-solid fa-droplet fa-2x mb-2"></i><br><span class="fw-bold">Request Blood</span>
+                    </button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <button class="btn btn-success w-100 py-4 shadow-sm border-0 rounded-3" onclick="navigate('step7')">
+                        <i class="fa-solid fa-truck-medical fa-2x mb-2"></i><br><span class="fw-bold">Emergency Help</span>
+                    </button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <button class="btn btn-primary w-100 py-4 shadow-sm border-0 rounded-3" onclick="navigate('step8')">
+                        <i class="fa-solid fa-robot fa-2x mb-2"></i><br><span class="fw-bold">AI Assistant</span>
+                    </button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <button class="btn btn-secondary w-100 py-4 shadow-sm border-0 rounded-3" disabled>
+                        <i class="fa-solid fa-lungs fa-2x mb-2"></i><br><span class="fw-bold">Organ Donation</span><br><small class="text-light opacity-75">(Upcoming Feature)</small>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: Request Blood -->
+    <div id="step4" class="view-section d-none">
+        <div class="container mt-5 d-flex justify-content-center">
+            <div class="card p-4 shadow-sm" style="width: 500px; border-radius: 15px;">
+                <h3 class="fw-bold mb-4">Request Blood</h3>
+                
+                <label class="form-label fw-semibold">Blood Group *</label>
+                <select id="req-blood-group" class="form-select mb-3">
+                    <option value="O+">O+</option>
+                    <option value="A+">A+</option>
+                    <option value="B+">B+</option>
+                    <option value="AB+">AB+</option>
+                    <option value="O-">O-</option>
+                </select>
+
+                <label class="form-label fw-semibold">Units Needed *</label>
+                <input type="number" id="req-units" class="form-control mb-3" value="1" min="1">
+                
+                <label class="form-label fw-semibold">Location / Area *</label>
+                <input type="text" id="req-location" class="form-control mb-3" placeholder="e.g. Dhanmondi, Dhaka">
+                
+                <label class="form-label fw-semibold">Hospital Name (Optional)</label>
+                <input type="text" id="req-hospital" class="form-control mb-4" placeholder="e.g. Square Hospital">
+                
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-outline-secondary px-4" onclick="navigate('step3')">Back</button>
+                    <button class="btn btn-danger px-4" onclick="handleBloodRequest()">Find Donors (AI Match)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 5: AI Donor Matching -->
+    <div id="step5" class="view-section d-none p-4">
+        <div class="container"></div>
+    </div>
+
+    <!-- Step 6: Donor Contact & Details -->
+    <div id="step6" class="view-section d-none">
+        <div class="container"></div>
+    </div>
+
+    <!-- Step 7: Emergency Help -->
+    <div id="step7" class="view-section d-none p-4">
+        <div class="container text-center">
+            <h3 class="fw-bold mb-4 text-danger"><i class="fa-solid fa-truck-medical"></i> Emergency Help</h3>
+            <div class="row justify-content-center gap-3">
+                <div class="col-md-3 card p-4 shadow-sm border-0 btn-action cursor-pointer mb-2" onclick="openGoogleMaps('hospitals near me')">
+                    <i class="fa-regular fa-hospital fa-3x text-primary mb-3"></i>
+                    <h5 class="fw-bold">Nearby Hospitals</h5>
+                    <small class="text-muted">Open Live Map</small>
+                </div>
+                <div class="col-md-3 card p-4 shadow-sm border-0 btn-action cursor-pointer mb-2" onclick="openGoogleMaps('blood banks near me')">
+                    <i class="fa-solid fa-kit-medical fa-3x text-danger mb-3"></i>
+                    <h5 class="fw-bold">Blood Banks</h5>
+                    <small class="text-muted">Open Live Map</small>
+                </div>
+                <div class="col-md-3 card p-4 shadow-sm border-0 btn-action cursor-pointer mb-2" onclick="window.location.href='tel:999'">
+                    <i class="fa-solid fa-phone-volume fa-3x text-success mb-3"></i>
+                    <h5 class="fw-bold">Ambulance</h5>
+                    <small class="text-muted">Call Emergency Services</small>
+                </div>
+            </div>
+            <button class="btn btn-danger btn-lg mt-5 px-5 shadow" onclick="window.location.href='tel:999'">
+                <i class="fa-solid fa-phone"></i> Call Emergency (999)
+            </button>
+            <br>
+            <button class="btn btn-secondary mt-3" onclick="navigate('step3')">Back to Dashboard</button>
+        </div>
+    </div>
+
+    <!-- Step 8: AI Assistant -->
+    <div id="step8" class="view-section d-none p-4">
+        <div class="container d-flex justify-content-center">
+            <div class="card shadow-sm border-0" style="width: 500px; border-radius: 15px; height: 80vh;">
+                <div class="card-header bg-danger text-white fw-bold d-flex align-items-center">
+                    <i class="fa-solid fa-robot me-2"></i> LifeLink AI Assistant
+                </div>
+                <div class="card-body overflow-auto" id="chat-box" style="background-color: #f8f9fa;">
+                    <div class="mb-3">
+                        <div class="bg-white p-3 rounded shadow-sm d-inline-block border text-dark">
+                            <i class="fa-solid fa-robot text-danger me-1"></i> Hello! I'm your LifeLink AI assistant. How can I help you today?
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white d-flex align-items-center">
+                    <input type="text" id="user-input" class="form-control me-2" placeholder="Ask for emergency first aid advice..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                    <button class="btn btn-danger" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+                <button class="btn btn-sm btn-secondary m-2" onclick="navigate('step3')">Back to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="container mt-5 py-4 border-top text-center text-muted">
+        <p class="small mb-0">© 2026 LifeLink AI - First Year CSE Project Showcase</p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script src="static/app.js"></script>
+</body>
+</html>
