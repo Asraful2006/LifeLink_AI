@@ -157,76 +157,40 @@ function showDonorDetails(name, blood, phone, distance) {
 function openGoogleMaps(query) {
     window.open(`https://www.google.com/maps/search/${encodeURIComponent(query)}`, '_blank');
 }
-
-// 6. REAL GEMINI AI INTEGRATION
+// 6. GEMINI AI INTEGRATION THROUGH FLASK BACKEND
 async function sendMessage() {
     const inputField = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     const userMessage = inputField.value.trim();
 
-    if (userMessage === "") return;
+    if (!userMessage) return;
 
-    // Display User Message
     const userDiv = document.createElement('div');
-    userDiv.className = "mb-3 text-end";
-    userDiv.innerHTML = `<div class="bg-danger text-white p-2 rounded shadow-sm d-inline-block">${userMessage}</div>`;
+    userDiv.className = 'mb-3 text-end';
+    userDiv.textContent = userMessage;
     chatBox.appendChild(userDiv);
-    inputField.value = "";
-    chatBox.scrollTop = chatBox.scrollHeight;
 
-    // Display Loading State
-    const loadingDiv = document.createElement('div');
-    loadingDiv.className = "mb-3";
-    loadingDiv.id = "ai-loading";
-    loadingDiv.innerHTML = `
-        <div class="bg-white p-3 rounded shadow-sm d-inline-block border text-muted">
-            <i class="fa-solid fa-spinner fa-spin text-danger me-2"></i> LifeLink AI চিন্তা করছে...
-        </div>`;
-    chatBox.appendChild(loadingDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    // YOUR API KEY INSERTED HERE
-    const GEMINI_API_KEY = "AQ.Ab8RN6JGVXYaWU4QZLJilrmi_RwOL8W1f2-cTQMZAeGr1PzwUQ";
-
-    const systemPrompt = `You are LifeLink AI, an emergency medical and first-aid assistant. Provide clear, short, professional, and actionable first-aid guidance. User query: ${userMessage}`;
+    inputField.value = '';
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: systemPrompt }] }]
-            })
+            body: JSON.stringify({ message: userMessage })
         });
 
         const data = await response.json();
-        const aiReply = data.candidates[0].content.parts[0].text;
 
-        // Remove loading spinner
-        document.getElementById('ai-loading').remove();
-        
-        // Render AI Answer
         const aiDiv = document.createElement('div');
-        aiDiv.className = "mb-3";
-        aiDiv.innerHTML = `
-            <div class="bg-white p-3 rounded shadow-sm d-inline-block border text-dark">
-                <i class="fa-solid fa-robot text-danger me-1"></i> ${aiReply.replace(/\n/g, '<br>')}
-            </div>`;
+        aiDiv.className = 'mb-3';
+        aiDiv.textContent = data.reply || 'কোনো উত্তর পাওয়া যায়নি।';
         chatBox.appendChild(aiDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
-
     } catch (error) {
-        console.error("Gemini API Error:", error);
-        if (document.getElementById('ai-loading')) {
-            document.getElementById('ai-loading').remove();
-        }
-        
         const errorDiv = document.createElement('div');
-        errorDiv.className = "mb-3";
-        errorDiv.innerHTML = `
-            <div class="bg-white p-3 rounded shadow-sm d-inline-block border text-danger">
-                <i class="fa-solid fa-triangle-exclamation me-1"></i> API Key সমস্যা অথবা কানেকশন এরর হয়েছে।
-            </div>`;
+        errorDiv.className = 'mb-3 text-danger';
+        errorDiv.textContent = 'AI service-এর সঙ্গে যোগাযোগ করা যায়নি।';
         chatBox.appendChild(errorDiv);
     }
+
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
