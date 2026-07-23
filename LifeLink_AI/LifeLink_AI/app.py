@@ -8,7 +8,7 @@ app = Flask(__name__)
 # 1. GEMINI AI CONFIGURATION
 # =========================================================
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-2.5-flash')
+model = genai.GenerativeModel("gemini-3.5-flash")
 
 # =========================================================
 # 2. DATA STRUCTURE: BINARY SEARCH TREE (BST) NODE
