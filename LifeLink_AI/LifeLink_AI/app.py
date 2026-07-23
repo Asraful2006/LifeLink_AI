@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+import os
 import google.generativeai as genai
 
 app = Flask(__name__)
@@ -6,8 +7,7 @@ app = Flask(__name__)
 # =========================================================
 # 1. GEMINI AI CONFIGURATION
 # =========================================================
-GEMINI_API_KEY = "AQ.Ab8RN6JGVXYaWU4QZLJilrmi_RwOL8W1f2-cTQMZAeGr1PzwUQ"
-genai.configure(api_key=GEMINI_API_KEY)
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # =========================================================
