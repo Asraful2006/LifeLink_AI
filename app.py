@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
 import os
-
+from supabase import create_client
 app = Flask(__name__)
 
 # =========================================================
@@ -10,7 +10,10 @@ app = Flask(__name__)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
-
+# Supabase Configuration
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # =========================================================
 # 2. DATA STRUCTURE: BINARY SEARCH TREE (BST) NODE
 # =========================================================
