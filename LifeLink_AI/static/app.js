@@ -49,30 +49,48 @@ function handleLogin() {
 }
 
 // 4. Handle New User Registration
-function handleRegister() {
-    const name = document.getElementById('reg-name').value.trim();
-    const phone = document.getElementById('reg-phone').value.trim();
-    const blood = document.getElementById('reg-blood').value;
-    const location = document.getElementById('reg-location').value.trim();
+async function handleRegister() {
+    const name = document.getElementById("reg-name").value.trim();
+    const phone = document.getElementById("reg-phone").value.trim();
+    const blood = document.getElementById("reg-blood").value;
+    const location = document.getElementById("reg-location").value.trim();
 
-    if (!name || !phone || !location) {
-        alert("Please fill in all required fields!");
+    if (!name || !phone || !blood || !location) {
+        alert("Please complete all required fields.");
         return;
     }
 
-    appState.currentUser = { name, phone, blood, location };
-    
-    document.getElementById('req-location').value = location;
-    document.getElementById('req-blood-group').value = blood;
+    try {
+        const response = await fetch("/api/donor/add", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: name,
+                phone: phone,
+                blood: blood,
+                location: location,
+                distance: 1.5
+            })
+        });
 
-    updateUserUI();
-    alert(`Welcome, ${name}! Your account has been registered successfully.`);
-    navigate('step3');
-}
+        const result = await response.json();
 
-// Update UI with User Details
-function updateUserUI() {
-    document.getElementById('user-display-name').innerText = `Hello, ${appState.currentUser.name} 👋`;
+        if (!response.ok) {
+            throw new Error(result.message || "Registration failed");
+        }
+
+        document.getElementById("user-display-name").textContent =
+            `Hello, ${name} 👋`;
+
+        alert("Donor registered successfully!");
+        navigate("step3");
+
+    } catch (error) {
+        console.error("Registration error:", error);
+        alert(error.message || "Registration failed. Please try again.");
+    }
 }
 
 // 5. Handle Blood Request
