@@ -122,20 +122,46 @@ def delete_donor():
         return jsonify({"status": "success", "message": "Donor removed successfully!"})
     
     return jsonify({"status": "error", "message": "Donor not found!"}), 404
-
 # API: Gemini AI Chat Assistant
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
     data = request.json
-    user_prompt = data.get('message', '')
-    
-    system_instruction = f"You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice. User query: {user_prompt}"
-    
+    user_prompt = data.get('message', '').strip()
+
+    if not user_prompt:
+        return jsonify({
+            "status": "error",
+            "reply": "Please enter a message."
+        }), 400
+
+    system_instruction = (
+        "You are LifeLink AI, an emergency medical and first-aid assistant. "
+        "Provide short, precise, and practical advice.\n\n"
+        f"User: {user_prompt}"
+    )
+
     try:
         response = model.generate_content(system_instruction)
-        return jsonify({"status": "success", "reply": response.text})
+
+        return jsonify({
+            "status": "success",
+            "reply": response.text
+        })
+
     except Exception as e:
-        return jsonify({"status": "error", "reply": f"Gemini API Error: {str(e)}"}), 500
+        error_text = str(e)
+
+        # Gemini Free Tier quota exceeded
+        if "429" in error_text or "quota" in error_text.lower():
+            return jsonify({
+                "status": "success",
+                "reply": "⚠️ AI daily usage limit has been reached. For emergency situations, please contact your nearest hospital or emergency service immediately."
+            })
+
+        return jsonify({
+            "status": "error",
+            "reply": "AI service is temporarily unavailable. Please try again later."
+        }), 500
 
 # Run Application Server
 if __name__ == '__main__':
