@@ -1,3 +1,4 @@
+// Registration API v4
 // Local Database Simulation
 let appState = {
     currentUser: { name: "Arif", phone: "01800000000", blood: "O+", location: "Dhanmondi" },
