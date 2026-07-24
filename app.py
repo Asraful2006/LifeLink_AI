@@ -100,25 +100,50 @@ def request_blood():
     })
 
 # API: Register New Donor (Add to Hash Table)
+# API: Register New Donor in Supabase
 @app.route('/api/donor/add', methods=['POST'])
 def add_donor():
-    data = request.json
-    blood = data.get('blood')
-    new_donor = {
-        "id": len(donor_hash_table.get(blood, [])) + 10,
-        "name": data.get('name'),
-        "blood": blood,
-        "location": data.get('location'),
-        "distance": float(data.get('distance', 1.5)),
-        "phone": data.get('phone')
-    }
-    
-    if blood not in donor_hash_table:
-        donor_hash_table[blood] = []
-        
-    donor_hash_table[blood].append(new_donor)
-    return jsonify({"status": "success", "message": "Donor registered successfully in Hash Table!"})
+    try:
+        data = request.get_json(silent=True) or {}
 
+        name = data.get('name', '').strip()
+        blood = data.get('blood', '').strip()
+        location = data.get('location', '').strip()
+        phone = data.get('phone', '').strip()
+        distance = float(data.get('distance') or 1.5)
+
+        if not name or not blood or not location or not phone:
+            return jsonify({
+                "status": "error",
+                "message": "Please complete all required fields."
+            }), 400
+
+        new_donor = {
+            "name": name,
+            "blood": blood,
+            "location": location,
+            "distance": distance,
+            "phone": phone
+        }
+
+        response = supabase.table("donors").insert(new_donor).execute()
+        saved_donor = response.data[0]
+
+        # Keep the newly registered donor available for immediate searching
+        donor_hash_table.setdefault(blood, []).append(saved_donor)
+
+        return jsonify({
+            "status": "success",
+            "message": "Donor registered successfully!",
+            "donor": saved_donor
+        }), 201
+
+    except Exception:
+        app.logger.exception("Donor registration failed")
+        return jsonify({
+            "status": "error",
+            "message": "Registration failed. Please try again."
+        }), 500
 # API: Delete Donor
 @app.route('/api/donor/delete', methods=['DELETE'])
 def delete_donor():
