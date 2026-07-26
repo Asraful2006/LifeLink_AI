@@ -47,7 +47,7 @@ async function handleLogin() {
     const password = document.getElementById('login-password')?.value.trim();
 
     if (!identifier || !password) {
-        alert("দয়া করে ফোন নম্বর এবং পাসওয়ার্ড দিন!");
+        alert("দয়া করে ফোন নম্বর এবং পাসওয়ার্ড দিন!");
         return;
     }
 
@@ -63,10 +63,10 @@ async function handleLogin() {
         if (response.ok && result.status === 'success') {
             appState.currentUser = result.user;
             updateUserUI();
-            alert("লগইন সফল হয়েছে! 🎉");
+            alert("লগইন সফল হয়েছে! 🎉");
             navigate('step3'); // Dashboard
         } else {
-            alert("Error: " + (result.message || "লগইন ব্যর্থ হয়েছে!"));
+            alert("Error: " + (result.message || "লগইন ব্যর্থ হয়েছে!"));
         }
     } catch (err) {
         console.error("Network Error:", err);
@@ -82,8 +82,8 @@ async function handleRegister() {
     const location = document.getElementById('reg-location')?.value.trim();
     const password = document.getElementById('reg-password')?.value.trim();
 
-    if (!name || !phone || !location || !password) {
-        alert("সবগুলো ফিল্ড (পাসওয়ার্ডসহ) সঠিকভাবে পূরণ করো!");
+    if (!name || !phone || !blood || !location || !password) {
+        alert("সবগুলো ফিল্ড (ব্লাড গ্রুপ ও পাসওয়ার্ডসহ) সঠিকভাবে পূরণ করো!");
         return;
     }
 
@@ -108,7 +108,7 @@ async function handleRegister() {
             updateUserUI();
             navigate('step3'); // Dashboard
         } else {
-            alert("Error: " + (result.message || "রেজিস্ট্রেশন করা যায়নি!"));
+            alert("Error: " + (result.message || "রেজিস্ট্রেশন করা যায়নি!"));
         }
     } catch (err) {
         console.error("Network Error:", err);
@@ -131,7 +131,7 @@ async function handleBloodRequest() {
     const location = document.getElementById('req-location')?.value.trim();
 
     if (!location) {
-        alert("দয়া করে লোকেশন লিখুন!");
+        alert("দয়া করে লোকেশন লিখুন!");
         return;
     }
 
@@ -155,7 +155,7 @@ async function handleBloodRequest() {
         navigate('step5');
     } catch (err) {
         console.error("Error fetching blood requests:", err);
-        alert("ব্লাড রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে!");
+        alert("ব্লাড রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে!");
     }
 }
 
@@ -205,7 +205,6 @@ function showDonorDetails(name, blood, phone, distance) {
                     <span class="badge bg-success">Available Now</span>
                 </div>
                 <ul class="list-group list-group-flush mb-4">
-                    <ul class="list-group list-group-flush mb-4">
                     <li class="list-group-item d-flex justify-content-between"><span>Blood Group</span><strong>${blood}</strong></li>
                     <li class="list-group-item d-flex justify-content-between"><span>Distance</span><strong>${distance} km</strong></li>
                     <li class="list-group-item d-flex justify-content-between"><span>Phone</span><strong>${phone}</strong></li>
