@@ -1,25 +1,30 @@
 from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
 import os
-from supabase import create_client
+from pymongo import MongoClient
+from werkzeug.security import generate_password_hash, check_password_hash
+from bson.objectid import ObjectId
+
 app = Flask(__name__)
 
 # =========================================================
-# 1. GEMINI AI CONFIGURATION
+# 1. GEMINI AI & MONGODB CONFIGURATION
 # =========================================================
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
-# Supabase Configuration
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+MONGO_URI = os.environ.get("MONGO_URI")
+client = MongoClient(MONGO_URI)
+db = client['lifelink_db']          
+users_collection = db['donors']     
+
 # =========================================================
 # 2. DATA STRUCTURE: BINARY SEARCH TREE (BST) NODE
 # =========================================================
 class BSTNode:
     def __init__(self, donor):
-        self.donor = donor  # donor dict: {id, name, blood, location, distance, phone}
+        self.donor = donor  
         self.left = None
         self.right = None
 
@@ -36,7 +41,6 @@ class DonorBST:
             root.right = self.insert(root.right, donor)
         return root
 
-    # In-order traversal: কাছের ডোনারদের দূরত্ব অনুযায়ী আগে সাজিয়ে আনবে
     def get_sorted_donors(self, root, result):
         if root:
             self.get_sorted_donors(root.left, result)
@@ -44,48 +48,47 @@ class DonorBST:
             self.get_sorted_donors(root.right, result)
 
 # =========================================================
-# 3. DATA STRUCTURE: HASH TABLE (Blood Group -> Donors List)
+# 3. LOAD DATA FROM MONGODB TO HASH TABLE ON STARTUP
 # =========================================================
 donor_hash_table = {
-    "O+": [
-        {"id": 1, "name": "Ayesha Rahman", "blood": "O+", "location": "Dhanmondi", "distance": 0.8, "phone": "01611-889900"},
-        {"id": 2, "name": "Riad Hasan", "blood": "O+", "location": "Dhanmondi", "distance": 1.2, "phone": "01812-345678"},
-        {"id": 3, "name": "Nusrat Jahan", "blood": "O+", "location": "Mirpur", "distance": 2.5, "phone": "01711-987654"}
-    ],
-    "A+": [
-        {"id": 4, "name": "Saiful Islam", "blood": "A+", "location": "Uttara", "distance": 3.1, "phone": "01911-223344"}
-    ],
-    "B+": [
-        {"id": 5, "name": "Tanvir Ahmed", "blood": "B+", "location": "Gulshan", "distance": 4.2, "phone": "01511-556677"}
-    ],
-    "AB+": [],
-    "O-": []
+    "O+": [], "A+": [], "B+": [], "AB+": [], 
+    "O-": [], "A-": [], "B-": [], "AB-": []
 }
+
+def load_donors_from_mongo():
+    try:
+        all_donors = list(users_collection.find({}))
+        for donor in all_donors:
+            donor['id'] = str(donor.get('_id')) 
+            blood = donor.get("blood")
+            if blood in donor_hash_table:
+                donor_hash_table[blood].append(donor)
+            else:
+                donor_hash_table[blood] = [donor]
+    except Exception as e:
+        print("Error loading from MongoDB:", e)
+
+load_donors_from_mongo()
 
 # =========================================================
 # 4. FLASK ROUTES
 # =========================================================
 
-# Home Route: Load index.html from templates folder
 @app.route('/')
 def home():
     return render_template('index.html')
 
-# Admin Route: View all registered users/donors
 @app.route('/admin/users')
 def admin_users():
     return render_template('view_users.html', donor_hash_table=donor_hash_table)
 
-# API: Blood Search using Hash Table & BST Sorting
 @app.route('/api/request-blood', methods=['POST'])
 def request_blood():
     data = request.json
     blood_group = data.get('blood_group')
     
-    # Step A: Hash Table Lookup O(1)
     donors_list = donor_hash_table.get(blood_group, [])
     
-    # Step B: Build BST to sort donors by distance O(N log N)
     bst = DonorBST()
     for donor in donors_list:
         bst.root = bst.insert(bst.root, donor)
@@ -99,8 +102,6 @@ def request_blood():
         "count": len(sorted_donors)
     })
 
-# API: Register New Donor (Add to Hash Table)
-# API: Register New Donor in Supabase
 @app.route('/api/donor/add', methods=['POST'])
 def add_donor():
     try:
@@ -110,41 +111,66 @@ def add_donor():
         blood = data.get('blood', '').strip()
         location = data.get('location', '').strip()
         phone = data.get('phone', '').strip()
+        raw_password = data.get('password', '').strip()
         distance = float(data.get('distance') or 1.5)
 
-        if not name or not blood or not location or not phone:
-            return jsonify({
-                "status": "error",
-                "message": "Please complete all required fields."
-            }), 400
+        if not name or not blood or not location or not phone or not raw_password:
+            return jsonify({"status": "error", "message": "All fields including password are required."}), 400
+
+        hashed_password = generate_password_hash(raw_password)
 
         new_donor = {
             "name": name,
             "blood": blood,
             "location": location,
             "distance": distance,
-            "phone": phone
+            "phone": phone,
+            "password": hashed_password
         }
 
-        response = supabase.table("donors").insert(new_donor).execute()
-        saved_donor = response.data[0]
+        result = users_collection.insert_one(new_donor)
+        new_donor['id'] = str(result.inserted_id)
+        del new_donor['_id'] 
+        del new_donor['password'] 
 
-        # Keep the newly registered donor available for immediate searching
-        donor_hash_table.setdefault(blood, []).append(saved_donor)
+        donor_hash_table.setdefault(blood, []).append(new_donor)
 
         return jsonify({
             "status": "success",
             "message": "Donor registered successfully!",
-            "donor": saved_donor
+            "donor": new_donor
         }), 201
 
-    except Exception:
-        app.logger.exception("Donor registration failed")
-        return jsonify({
-            "status": "error",
-            "message": "Registration failed. Please try again."
-        }), 500
-# API: Delete Donor
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/login', methods=['POST'])
+def login_user():
+    try:
+        data = request.get_json(silent=True) or {}
+        identifier = data.get('identifier', '').strip()
+        password = data.get('password', '').strip()
+
+        if not identifier or not password:
+            return jsonify({"status": "error", "message": "Phone and password are required."}), 400
+
+        user = users_collection.find_one({"phone": identifier})
+        
+        if not user:
+            return jsonify({"status": "error", "message": "User not found!"}), 404
+
+        if check_password_hash(user.get("password"), password):
+            return jsonify({
+                "status": "success", 
+                "message": "Login successful!",
+                "user": {"name": user.get("name"), "blood": user.get("blood"), "phone": user.get("phone")}
+            }), 200
+        else:
+            return jsonify({"status": "error", "message": "Incorrect password!"}), 401
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route('/api/donor/delete', methods=['DELETE'])
 def delete_donor():
     data = request.json
@@ -153,11 +179,14 @@ def delete_donor():
     
     if blood in donor_hash_table:
         donor_hash_table[blood] = [d for d in donor_hash_table[blood] if d['id'] != donor_id]
+        try:
+            users_collection.delete_one({"_id": ObjectId(donor_id)})
+        except Exception:
+            pass
         return jsonify({"status": "success", "message": "Donor removed successfully!"})
     
     return jsonify({"status": "error", "message": "Donor not found!"}), 404
 
-# API: Gemini AI Chat Assistant
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
     data = request.json
@@ -171,6 +200,5 @@ def ai_chat():
     except Exception as e:
         return jsonify({"status": "error", "reply": f"Gemini API Error: {str(e)}"}), 500
 
-# Run Application Server
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
