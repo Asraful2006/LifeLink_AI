@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-import google.generativeai as genai
+from google import genai
 import os
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,11 +11,10 @@ app = Flask(__name__)
 # 1. GEMINI AI & MONGODB CONFIGURATION
 # =========================================================
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-model = None
+client_ai = None
 if GEMINI_API_KEY:
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        client_ai = genai.Client(api_key=GEMINI_API_KEY)
     except Exception as e:
         print("Gemini Config Error:", e)
 
@@ -230,7 +229,7 @@ def delete_donor():
 # =========================================================
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
-    if model is None:
+    if client_ai is None:
         return jsonify({"status": "error", "reply": "Gemini API Key missing or invalid in Render Environment Variable!"}), 500
 
     data = request.json or {}
@@ -242,7 +241,10 @@ def ai_chat():
     system_instruction = f"You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice. User query: {user_prompt}"
     
     try:
-        response = model.generate_content(system_instruction)
+        response = client_ai.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=system_instruction
+        )
         return jsonify({"status": "success", "reply": response.text})
     except Exception as e:
         return jsonify({"status": "error", "reply": f"Gemini API Error: {str(e)}"}), 500
