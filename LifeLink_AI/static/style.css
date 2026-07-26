@@ -26,6 +26,7 @@ body {
     box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
 }
 
+/* Blood Circle & Illustration */
 .blood-circle {
     background: radial-gradient(circle, #ffe3e5 0%, #fff0f1 100%);
     border-radius: 50%;
@@ -37,6 +38,15 @@ body {
     align-items: center;
     position: relative;
     border: 8px solid white;
+    margin: 0 auto;
+}
+
+.blood-drop-illustration {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2.5s infinite ease-in-out;
 }
 
 .drop-icon {
@@ -54,16 +64,27 @@ body {
     transform: translate(-50%, -60%);
 }
 
-.pointer {
+/* Interactive Cards & Buttons */
+.pointer, .cursor-pointer {
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.pointer:hover {
+.pointer:hover, .cursor-pointer:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
 }
 
+.btn-action {
+    transition: all 0.3s ease;
+}
+
+.btn-action:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.08) !important;
+}
+
+/* Sidebar Menu */
 .sidebar-menu .list-group-item {
     border: none;
     padding: 12px 15px;
@@ -77,6 +98,7 @@ body {
     font-weight: 600;
 }
 
+/* Utilities & Animations */
 .bg-purple {
     background-color: #6f42c1;
 }
@@ -93,4 +115,9 @@ body {
 
 .animate-pulse {
     animation: pulse 2s infinite;
+}
+
+/* AI Chatbox Scroll behavior */
+#chat-box {
+    scroll-behavior: smooth;
 }
