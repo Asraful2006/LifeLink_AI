@@ -1,5 +1,5 @@
-// Registration API v4
-// Local Database Simulation
+// LifeLink AI - Core Application Logic
+// Local Database Simulation & State Management
 let appState = {
     currentUser: { name: "Arif", phone: "01800000000", blood: "O+", location: "Dhanmondi" },
     activeRequestsCount: 12,
@@ -42,11 +42,52 @@ function switchAuthTab(tab) {
     }
 }
 
+// Helper: Update UI Header User Name
+function updateUserUI() {
+    const userDisplay = document.getElementById("user-display-name");
+    if (userDisplay && appState.currentUser.name) {
+        userDisplay.textContent = `Hello, ${appState.currentUser.name} 👋`;
+    }
+}
+
 // 3. Handle User Login
-function handleLogin() {
-    appState.currentUser.name = "Arif";
-    updateUserUI();
-    navigate('step3');
+async function handleLogin() {
+    const phoneInput = document.getElementById("login-phone");
+    const passwordInput = document.getElementById("login-password");
+
+    const phone = phoneInput ? phoneInput.value.trim() : "";
+    const password = passwordInput ? passwordInput.value.trim() : "";
+
+    if (!phone || !password) {
+        alert("Please enter phone number and password.");
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone: phone, password: password })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success") {
+            appState.currentUser.name = result.user ? result.user.name : "User";
+            appState.currentUser.phone = phone;
+            updateUserUI();
+            alert("Login successful!");
+            navigate("step3");
+        } else {
+            alert(result.message || "Invalid phone number or password.");
+        }
+    } catch (error) {
+        console.error("Login error:", error);
+        // Fallback for UI demonstration
+        appState.currentUser.name = "Arif";
+        updateUserUI();
+        navigate("step3");
+    }
 }
 
 // 4. Handle New User Registration
@@ -55,9 +96,11 @@ async function handleRegister() {
     const phone = document.getElementById("reg-phone").value.trim();
     const blood = document.getElementById("reg-blood").value;
     const location = document.getElementById("reg-location").value.trim();
+    const passwordInput = document.getElementById("reg-password");
+    const password = passwordInput ? passwordInput.value.trim() : "";
 
-    if (!name || !phone || !blood || !location) {
-        alert("Please complete all required fields.");
+    if (!name || !phone || !blood || !location || !password) {
+        alert("Please complete all required fields including password.");
         return;
     }
 
@@ -72,7 +115,8 @@ async function handleRegister() {
                 phone: phone,
                 blood: blood,
                 location: location,
-                distance: 1.5
+                password: password,
+                distance: "1.5 km"
             })
         });
 
@@ -82,8 +126,8 @@ async function handleRegister() {
             throw new Error(result.message || "Registration failed");
         }
 
-        document.getElementById("user-display-name").textContent =
-            `Hello, ${name} 👋`;
+        appState.currentUser = { name, phone, blood, location };
+        updateUserUI();
 
         alert("Donor registered successfully!");
         navigate("step3");
@@ -176,6 +220,7 @@ function showDonorDetails(name, blood, phone, distance) {
 function openGoogleMaps(query) {
     window.open(`https://www.google.com/maps/search/${encodeURIComponent(query)}`, '_blank');
 }
+
 // 6. GEMINI AI INTEGRATION THROUGH FLASK BACKEND
 async function sendMessage() {
     const inputField = document.getElementById('user-input');
@@ -186,7 +231,7 @@ async function sendMessage() {
 
     const userDiv = document.createElement('div');
     userDiv.className = 'mb-3 text-end';
-    userDiv.textContent = userMessage;
+    userDiv.innerHTML = `<div class="bg-danger text-white p-2 px-3 rounded d-inline-block">${userMessage}</div>`;
     chatBox.appendChild(userDiv);
 
     inputField.value = '';
@@ -201,13 +246,13 @@ async function sendMessage() {
         const data = await response.json();
 
         const aiDiv = document.createElement('div');
-        aiDiv.className = 'mb-3';
-        aiDiv.textContent = data.reply || 'কোনো উত্তর পাওয়া যায়নি।';
+        aiDiv.className = 'mb-3 text-start';
+        aiDiv.innerHTML = `<div class="bg-white p-3 rounded shadow-sm d-inline-block border text-dark"><i class="fa-solid fa-robot text-danger me-1"></i> ${data.reply || 'কোনো উত্তর পাওয়া যায়নি।'}</div>`;
         chatBox.appendChild(aiDiv);
     } catch (error) {
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'mb-3 text-danger';
-        errorDiv.textContent = 'AI service-এর সঙ্গে যোগাযোগ করা যায়নি।';
+        errorDiv.className = 'mb-3 text-danger text-start';
+        errorDiv.textContent = 'AI service-এর সঙ্গে যোগাযোগ করা যায়নি।';
         chatBox.appendChild(errorDiv);
     }
 
