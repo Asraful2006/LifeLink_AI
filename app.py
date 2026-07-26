@@ -11,13 +11,18 @@ app = Flask(__name__)
 # 1. GEMINI AI & MONGODB CONFIGURATION
 # =========================================================
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = None
+if GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+    except Exception as e:
+        print("Gemini Config Error:", e)
 
 MONGO_URI = os.environ.get("MONGO_URI")
-client = MongoClient(MONGO_URI)
-db = client['lifelink_db']          
-users_collection = db['donors']     
+client = MongoClient(MONGO_URI) if MONGO_URI else None
+db = client['lifelink_db'] if client is not None else None
+users_collection = db['donors'] if db is not None else None
 
 # =========================================================
 # 2. DATA STRUCTURE: BINARY SEARCH TREE (BST) NODE
@@ -35,7 +40,7 @@ class DonorBST:
     def insert(self, root, donor):
         if root is None:
             return BSTNode(donor)
-        if donor['distance'] < root.donor['distance']:
+        if donor.get('distance', 0) < root.donor.get('distance', 0):
             root.left = self.insert(root.left, donor)
         else:
             root.right = self.insert(root.right, donor)
@@ -56,10 +61,17 @@ donor_hash_table = {
 }
 
 def load_donors_from_mongo():
+    if users_collection is None:
+        return
     try:
         all_donors = list(users_collection.find({}))
         for donor in all_donors:
-            donor['id'] = str(donor.get('_id')) 
+            donor['id'] = str(donor.get('_id'))
+            if '_id' in donor:
+                del donor['_id']
+            if 'password' in donor:
+                del donor['password'] # Security: Hash table এ পাসওয়ার্ড রাখা দরকার নেই
+            
             blood = donor.get("blood")
             if blood in donor_hash_table:
                 donor_hash_table[blood].append(donor)
@@ -84,11 +96,12 @@ def admin_users():
 
 @app.route('/api/request-blood', methods=['POST'])
 def request_blood():
-    data = request.json
+    data = request.json or {}
     blood_group = data.get('blood_group')
     
     donors_list = donor_hash_table.get(blood_group, [])
     
+    # BST Sorting based on Distance
     bst = DonorBST()
     for donor in donors_list:
         bst.root = bst.insert(bst.root, donor)
@@ -102,8 +115,13 @@ def request_blood():
         "count": len(sorted_donors)
     })
 
+# Supports both /api/donor/add and /api/register
 @app.route('/api/donor/add', methods=['POST'])
+@app.route('/api/register', methods=['POST'])
 def add_donor():
+    if users_collection is None:
+        return jsonify({"status": "error", "message": "Database Connection Failed! Check MONGO_URI."}), 500
+
     try:
         data = request.get_json(silent=True) or {}
 
@@ -117,6 +135,10 @@ def add_donor():
         if not name or not blood or not location or not phone or not raw_password:
             return jsonify({"status": "error", "message": "All fields including password are required."}), 400
 
+        # Check existing user
+        if users_collection.find_one({"phone": phone}):
+            return jsonify({"status": "error", "message": "This phone number is already registered!"}), 400
+
         hashed_password = generate_password_hash(raw_password)
 
         new_donor = {
@@ -129,16 +151,23 @@ def add_donor():
         }
 
         result = users_collection.insert_one(new_donor)
-        new_donor['id'] = str(result.inserted_id)
-        del new_donor['_id'] 
-        del new_donor['password'] 
+        
+        # Format for memory
+        donor_for_mem = {
+            "id": str(result.inserted_id),
+            "name": name,
+            "blood": blood,
+            "location": location,
+            "distance": distance,
+            "phone": phone
+        }
 
-        donor_hash_table.setdefault(blood, []).append(new_donor)
+        donor_hash_table.setdefault(blood, []).append(donor_for_mem)
 
         return jsonify({
             "status": "success",
             "message": "Donor registered successfully!",
-            "donor": new_donor
+            "donor": donor_for_mem
         }), 201
 
     except Exception as e:
@@ -146,9 +175,12 @@ def add_donor():
 
 @app.route('/api/login', methods=['POST'])
 def login_user():
+    if users_collection is None:
+        return jsonify({"status": "error", "message": "Database Connection Error"}), 500
+
     try:
         data = request.get_json(silent=True) or {}
-        identifier = data.get('identifier', '').strip()
+        identifier = (data.get('identifier') or data.get('phone') or '').strip()
         password = data.get('password', '').strip()
 
         if not identifier or not password:
@@ -159,11 +191,16 @@ def login_user():
         if not user:
             return jsonify({"status": "error", "message": "User not found!"}), 404
 
-        if check_password_hash(user.get("password"), password):
+        if check_password_hash(user.get("password", ""), password):
             return jsonify({
                 "status": "success", 
                 "message": "Login successful!",
-                "user": {"name": user.get("name"), "blood": user.get("blood"), "phone": user.get("phone")}
+                "user": {
+                    "name": user.get("name"), 
+                    "blood": user.get("blood"), 
+                    "phone": user.get("phone"),
+                    "location": user.get("location")
+                }
             }), 200
         else:
             return jsonify({"status": "error", "message": "Incorrect password!"}), 401
@@ -173,25 +210,35 @@ def login_user():
 
 @app.route('/api/donor/delete', methods=['DELETE'])
 def delete_donor():
-    data = request.json
+    data = request.json or {}
     donor_id = data.get('id')
     blood = data.get('blood')
     
     if blood in donor_hash_table:
-        donor_hash_table[blood] = [d for d in donor_hash_table[blood] if d['id'] != donor_id]
+        donor_hash_table[blood] = [d for d in donor_hash_table[blood] if d.get('id') != donor_id]
         try:
-            users_collection.delete_one({"_id": ObjectId(donor_id)})
+            if users_collection is not None:
+                users_collection.delete_one({"_id": ObjectId(donor_id)})
         except Exception:
             pass
         return jsonify({"status": "success", "message": "Donor removed successfully!"})
     
     return jsonify({"status": "error", "message": "Donor not found!"}), 404
 
+# =========================================================
+# 5. GEMINI AI CHAT ROUTE
+# =========================================================
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
-    data = request.json
+    if model is None:
+        return jsonify({"status": "error", "reply": "Gemini API Key missing or invalid in Render Environment Variable!"}), 500
+
+    data = request.json or {}
     user_prompt = data.get('message', '')
     
+    if not user_prompt:
+        return jsonify({"status": "error", "reply": "Please send a valid message."}), 400
+
     system_instruction = f"You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice. User query: {user_prompt}"
     
     try:
