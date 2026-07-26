@@ -1,4 +1,4 @@
-// Local Database Simulation
+// Local Database Simulation / Frontend Main Script
 let appState = {
     currentUser: { name: "Arif", phone: "01800000000", blood: "O+", location: "Dhanmondi" },
     activeRequestsCount: 12,
@@ -29,76 +29,140 @@ function switchAuthTab(tab) {
     const tabs = document.querySelectorAll('#authTabs .nav-link');
 
     if (tab === 'login') {
-        loginForm.classList.remove('d-none');
-        regForm.classList.add('d-none');
-        tabs[0].classList.add('active');
-        tabs[1].classList.remove('active');
+        if (loginForm) loginForm.classList.remove('d-none');
+        if (regForm) regForm.classList.add('d-none');
+        if (tabs[0]) tabs[0].classList.add('active');
+        if (tabs[1]) tabs[1].classList.remove('active');
     } else {
-        loginForm.classList.add('d-none');
-        regForm.classList.remove('d-none');
-        tabs[0].classList.remove('active');
-        tabs[1].classList.add('active');
+        if (loginForm) loginForm.classList.add('d-none');
+        if (regForm) regForm.classList.remove('d-none');
+        if (tabs[0]) tabs[0].classList.remove('active');
+        if (tabs[1]) tabs[1].classList.add('active');
     }
 }
 
-// 3. Handle User Login
-function handleLogin() {
-    appState.currentUser.name = "Arif";
-    updateUserUI();
-    navigate('step3');
-}
+// 3. Handle User Login via Flask Backend
+async function handleLogin() {
+    const identifier = document.getElementById('login-phone')?.value.trim();
+    const password = document.getElementById('login-password')?.value.trim();
 
-// 4. Handle New User Registration
-function handleRegister() {
-    const name = document.getElementById('reg-name').value.trim();
-    const phone = document.getElementById('reg-phone').value.trim();
-    const blood = document.getElementById('reg-blood').value;
-    const location = document.getElementById('reg-location').value.trim();
-
-    if (!name || !phone || !location) {
-        alert("Please fill in all required fields!");
+    if (!identifier || !password) {
+        alert("দয়া করে ফোন নম্বর এবং পাসওয়ার্ড দিন!");
         return;
     }
 
-    appState.currentUser = { name, phone, blood, location };
-    
-    document.getElementById('req-location').value = location;
-    document.getElementById('req-blood-group').value = blood;
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier, password })
+        });
 
-    updateUserUI();
-    alert(`Welcome, ${name}! Your account has been registered successfully.`);
-    navigate('step3');
+        const result = await response.json();
+
+        if (response.ok && result.status === 'success') {
+            appState.currentUser = result.user;
+            updateUserUI();
+            alert("লগইন সফল হয়েছে! 🎉");
+            navigate('step3'); // Dashboard
+        } else {
+            alert("Error: " + (result.message || "লগইন ব্যর্থ হয়েছে!"));
+        }
+    } catch (err) {
+        console.error("Network Error:", err);
+        alert("সার্ভারে সংযোগ করতে সমস্যা হচ্ছে!");
+    }
+}
+
+// 4. Handle New User Registration (Connected to MongoDB via Flask)
+async function handleRegister() {
+    const name = document.getElementById('reg-name')?.value.trim();
+    const phone = document.getElementById('reg-phone')?.value.trim();
+    const blood = document.getElementById('reg-blood')?.value;
+    const location = document.getElementById('reg-location')?.value.trim();
+    const password = document.getElementById('reg-password')?.value.trim();
+
+    if (!name || !phone || !location || !password) {
+        alert("সবগুলো ফিল্ড (পাসওয়ার্ডসহ) সঠিকভাবে পূরণ করো!");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, phone, blood, location, password, distance: 1.5 })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === 'success') {
+            alert("Database Updated Successfully! 🎉");
+            appState.currentUser = result.donor;
+            
+            const reqLoc = document.getElementById('req-location');
+            const reqBlood = document.getElementById('req-blood-group');
+            if (reqLoc) reqLoc.value = location;
+            if (reqBlood) reqBlood.value = blood;
+
+            updateUserUI();
+            navigate('step3'); // Dashboard
+        } else {
+            alert("Error: " + (result.message || "রেজিস্ট্রেশন করা যায়নি!"));
+        }
+    } catch (err) {
+        console.error("Network Error:", err);
+        alert("সার্ভারে সংযোগ করতে সমস্যা হচ্ছে!");
+    }
 }
 
 // Update UI with User Details
 function updateUserUI() {
-    document.getElementById('user-display-name').innerText = `Hello, ${appState.currentUser.name} 👋`;
+    const nameDisplay = document.getElementById('user-display-name');
+    if (nameDisplay) {
+        nameDisplay.innerText = `Hello, ${appState.currentUser.name} 👋`;
+    }
 }
 
 // 5. Handle Blood Request
-function handleBloodRequest() {
-    const bloodGroup = document.getElementById('req-blood-group').value;
-    const units = document.getElementById('req-units').value;
-    const location = document.getElementById('req-location').value.trim();
+async function handleBloodRequest() {
+    const bloodGroup = document.getElementById('req-blood-group')?.value;
+    const units = document.getElementById('req-units')?.value;
+    const location = document.getElementById('req-location')?.value.trim();
 
     if (!location) {
-        alert("Please enter a location!");
+        alert("দয়া করে লোকেশন লিখুন!");
         return;
     }
 
-    appState.activeRequestsCount++;
-    document.getElementById('dash-active-requests').innerText = appState.activeRequestsCount;
-    document.getElementById('landing-req-count').innerText = appState.activeRequestsCount;
+    try {
+        const response = await fetch('/api/request-blood', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ blood_group: bloodGroup, units, location })
+        });
 
-    const matchedDonors = appState.donors.filter(donor => donor.blood === bloodGroup);
+        const data = await response.json();
 
-    renderMatchingResults(matchedDonors, bloodGroup, location, units);
-    navigate('step5');
+        appState.activeRequestsCount++;
+        const dashReq = document.getElementById('dash-active-requests');
+        const landReq = document.getElementById('landing-req-count');
+        if (dashReq) dashReq.innerText = appState.activeRequestsCount;
+        if (landReq) landReq.innerText = appState.activeRequestsCount;
+
+        const matchedDonors = data.matched_donors || [];
+        renderMatchingResults(matchedDonors, bloodGroup, location, units);
+        navigate('step5');
+    } catch (err) {
+        console.error("Error fetching blood requests:", err);
+        alert("ব্লাড রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে!");
+    }
 }
 
 // Render AI Matched Donors
 function renderMatchingResults(donors, bloodGroup, userLoc, units) {
-    const container = document.getElementById('step5').querySelector('.container');
+    const container = document.getElementById('step5')?.querySelector('.container');
+    if (!container) return;
     
     let html = `
         <h3 class="fw-bold">Matching Donors Found</h3>
@@ -114,7 +178,7 @@ function renderMatchingResults(donors, bloodGroup, userLoc, units) {
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="mb-0 fw-bold">${donor.name} ${index === 0 ? '<span class="badge bg-success ms-2">Best Match</span>' : ''}</h5>
-                            <small class="text-muted">${donor.distance} away • Area: ${donor.location} • Group: ${donor.blood}</small>
+                            <small class="text-muted">${donor.distance} km away • Area: ${donor.location} • Group: ${donor.blood}</small>
                         </div>
                         <button class="btn btn-outline-danger" onclick="showDonorDetails('${donor.name}', '${donor.blood}', '${donor.phone}', '${donor.distance}')">Contact</button>
                     </div>
@@ -129,7 +193,9 @@ function renderMatchingResults(donors, bloodGroup, userLoc, units) {
 
 // Show Specific Donor Profile (Step 6)
 function showDonorDetails(name, blood, phone, distance) {
-    const container = document.getElementById('step6').querySelector('.container');
+    const container = document.getElementById('step6')?.querySelector('.container');
+    if (!container) return;
+
     container.innerHTML = `
         <div class="mt-5 d-flex justify-content-center">
             <div class="card p-4 shadow-sm" style="width: 400px; border-radius: 15px;">
@@ -139,8 +205,9 @@ function showDonorDetails(name, blood, phone, distance) {
                     <span class="badge bg-success">Available Now</span>
                 </div>
                 <ul class="list-group list-group-flush mb-4">
+                    <ul class="list-group list-group-flush mb-4">
                     <li class="list-group-item d-flex justify-content-between"><span>Blood Group</span><strong>${blood}</strong></li>
-                    <li class="list-group-item d-flex justify-content-between"><span>Distance</span><strong>${distance}</strong></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>Distance</span><strong>${distance} km</strong></li>
                     <li class="list-group-item d-flex justify-content-between"><span>Phone</span><strong>${phone}</strong></li>
                 </ul>
                 <div class="d-flex gap-2">
@@ -157,12 +224,14 @@ function showDonorDetails(name, blood, phone, distance) {
 function openGoogleMaps(query) {
     window.open(`https://www.google.com/maps/search/${encodeURIComponent(query)}`, '_blank');
 }
+
 // 6. GEMINI AI INTEGRATION THROUGH FLASK BACKEND
 async function sendMessage() {
     const inputField = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
-    const userMessage = inputField.value.trim();
+    if (!inputField || !chatBox) return;
 
+    const userMessage = inputField.value.trim();
     if (!userMessage) return;
 
     const userDiv = document.createElement('div');
@@ -183,12 +252,12 @@ async function sendMessage() {
 
         const aiDiv = document.createElement('div');
         aiDiv.className = 'mb-3';
-        aiDiv.textContent = data.reply || 'কোনো উত্তর পাওয়া যায়নি।';
+        aiDiv.textContent = data.reply || 'কোনো উত্তর পাওয়া যায়নি।';
         chatBox.appendChild(aiDiv);
     } catch (error) {
         const errorDiv = document.createElement('div');
         errorDiv.className = 'mb-3 text-danger';
-        errorDiv.textContent = 'AI service-এর সঙ্গে যোগাযোগ করা যায়নি।';
+        errorDiv.textContent = 'AI service-এর সঙ্গে যোগাযোগ করা যায়নি।';
         chatBox.appendChild(errorDiv);
     }
 
