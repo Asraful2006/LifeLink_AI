@@ -79,12 +79,12 @@
                 <div id="login-form">
                     <h4 class="text-center fw-bold mb-3">Welcome Back!</h4>
                     <div class="mb-3">
-                        <label class="form-label">Email or Phone</label>
-                        <input type="text" id="login-email" class="form-control" value="arif@example.com">
+                        <label class="form-label">Phone Number *</label>
+                        <input type="text" id="login-phone" class="form-control" placeholder="01700000000">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-control" value="123456">
+                        <label class="form-label">Password *</label>
+                        <input type="password" id="login-password" class="form-control" placeholder="Enter password">
                     </div>
                     <button class="btn btn-danger w-100 py-2 mt-2" onclick="handleLogin()">Login</button>
                 </div>
@@ -108,11 +108,18 @@
                             <option value="B+">B+</option>
                             <option value="AB+">AB+</option>
                             <option value="O-">O-</option>
+                            <option value="A-">A-</option>
+                            <option value="B-">B-</option>
+                            <option value="AB-">AB-</option>
                         </select>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-2">
                         <label class="form-label mb-1">Location / Area *</label>
                         <input type="text" id="reg-location" class="form-control" placeholder="e.g. Dhanmondi, Dhaka">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label mb-1">Password *</label>
+                        <input type="password" id="reg-password" class="form-control" placeholder="Create a password">
                     </div>
                     <button type="button" class="btn btn-danger w-100 py-2" onclick="handleRegister()">Register & Go to Dashboard</button>
                 </div>
@@ -127,7 +134,7 @@
                 <h2 class="text-danger fw-bold"><i class="fa-solid fa-heart-pulse"></i> LifeLink AI</h2>
                 <div class="d-flex align-items-center gap-2">
                     <i class="fa-solid fa-bell text-muted me-2"></i>
-                    <h5 class="mb-0 fw-semibold" id="user-display-name">Hello, Arif 👋</h5>
+                    <h5 class="mb-0 fw-semibold" id="user-display-name">Hello, User 👋</h5>
                 </div>
             </div>
 
@@ -191,6 +198,9 @@
                     <option value="B+">B+</option>
                     <option value="AB+">AB+</option>
                     <option value="O-">O-</option>
+                    <option value="A-">A-</option>
+                    <option value="B-">B-</option>
+                    <option value="AB-">AB-</option>
                 </select>
 
                 <label class="form-label fw-semibold">Units Needed *</label>
@@ -212,12 +222,12 @@
 
     <!-- Step 5: AI Donor Matching -->
     <div id="step5" class="view-section d-none p-4">
-        <div class="container"></div>
+        <div class="container" id="matching-results-container"></div>
     </div>
 
     <!-- Step 6: Donor Contact & Details -->
     <div id="step6" class="view-section d-none">
-        <div class="container"></div>
+        <div class="container" id="donor-details-container"></div>
     </div>
 
     <!-- Step 7: Emergency Help -->
