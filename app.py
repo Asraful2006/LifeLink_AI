@@ -70,7 +70,7 @@ def load_donors_from_mongo():
             if '_id' in donor:
                 del donor['_id']
             if 'password' in donor:
-                del donor['password'] # Security: Hash table এ পাসওয়ার্ড রাখা দরকার নেই
+                del donor['password'] # Security: Hash table এ পাসওয়ার্ড রাখা দরকার নেই
             
             blood = donor.get("blood")
             if blood in donor_hash_table:
