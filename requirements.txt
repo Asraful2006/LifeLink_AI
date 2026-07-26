@@ -1,4 +1,5 @@
 Flask
-pymongo
-google-generativeai
 gunicorn
+pymongo
+werkzeug
+google-genai
