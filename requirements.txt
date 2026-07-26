@@ -1,4 +1,4 @@
 Flask
-gunicorn
+pymongo
 google-generativeai
-supabase
+gunicorn
