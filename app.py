@@ -225,7 +225,7 @@ def delete_donor():
     return jsonify({"status": "error", "message": "Donor not found!"}), 404
 
 # =========================================================
-# 5. GEMINI AI CHAT ROUTE
+# 5. GEMINI AI CHAT ROUTE (WITH AUTOMATIC FALLBACK)
 # =========================================================
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
@@ -240,14 +240,21 @@ def ai_chat():
 
     system_instruction = f"You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice. User query: {user_prompt}"
     
-    try:
-        response = client_ai.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=system_instruction
-        )
-        return jsonify({"status": "success", "reply": response.text})
-    except Exception as e:
-        return jsonify({"status": "error", "reply": f"Gemini API Error: {str(e)}"}), 500
+    # Try primary model, fallback to lite if primary hits temporary rate limit
+    models_to_try = ["gemini-2.0-flash", "gemini-2.0-flash-lite"]
+    
+    for model_name in models_to_try:
+        try:
+            response = client_ai.models.generate_content(
+                model=model_name,
+                contents=system_instruction
+            )
+            return jsonify({"status": "success", "reply": response.text})
+        except Exception as e:
+            # If flash hits temporary rate limit, loop will automatically try flash-lite
+            if model_name == models_to_try[0]:
+                continue
+            return jsonify({"status": "error", "reply": f"Gemini API Error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
