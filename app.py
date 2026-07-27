@@ -225,7 +225,7 @@ def delete_donor():
     return jsonify({"status": "error", "message": "Donor not found!"}), 404
 
 # =========================================================
-# 5. GEMINI AI CHAT ROUTE (FIXED WORKING MODEL)
+# 5. GEMINI AI CHAT ROUTE (FALLBACK ENABLED VERSION)
 # =========================================================
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
@@ -240,18 +240,24 @@ def ai_chat():
 
     prompt_text = f"You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice.\n\nUser Question: {user_prompt}"
     
-    try:
-        response = client_ai.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt_text
-        )
-        if response and hasattr(response, 'text') and response.text:
-            return jsonify({"status": "success", "reply": response.text})
-        else:
-            return jsonify({"status": "error", "reply": "Received empty response from AI."}), 500
-            
-    except Exception as e:
-        return jsonify({"status": "error", "reply": f"AI Error: {str(e)}"}), 500
+    # List of models to attempt sequentially
+    models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-lite"]
+    
+    last_err = ""
+    for model_name in models_to_try:
+        try:
+            response = client_ai.models.generate_content(
+                model=model_name,
+                contents=prompt_text
+            )
+            if response and hasattr(response, 'text') and response.text:
+                return jsonify({"status": "success", "reply": response.text})
+        except Exception as e:
+            last_err = str(e)
+            time.sleep(0.5)
+            continue
+
+    return jsonify({"status": "error", "reply": f"AI Error: {last_err}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
