@@ -117,7 +117,6 @@ def request_blood():
         "count": len(sorted_donors)
     })
 
-# Supports both /api/donor/add and /api/register
 @app.route('/api/donor/add', methods=['POST'])
 @app.route('/api/register', methods=['POST'])
 def add_donor():
@@ -137,7 +136,6 @@ def add_donor():
         if not name or not blood or not location or not phone or not raw_password:
             return jsonify({"status": "error", "message": "All fields including password are required."}), 400
 
-        # Check existing user
         if users_collection.find_one({"phone": phone}):
             return jsonify({"status": "error", "message": "This phone number is already registered!"}), 400
 
@@ -154,7 +152,6 @@ def add_donor():
 
         result = users_collection.insert_one(new_donor)
         
-        # Format for memory
         donor_for_mem = {
             "id": str(result.inserted_id),
             "name": name,
@@ -228,7 +225,7 @@ def delete_donor():
     return jsonify({"status": "error", "message": "Donor not found!"}), 404
 
 # =========================================================
-# 5. GEMINI AI CHAT ROUTE (FIXED SINGLE STABLE MODEL)
+# 5. GEMINI AI CHAT ROUTE (FIXED WORKING MODEL)
 # =========================================================
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
@@ -244,9 +241,8 @@ def ai_chat():
     prompt_text = f"You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice.\n\nUser Question: {user_prompt}"
     
     try:
-        # Directly using gemini-1.5-flash which is widely supported and stable on free tier
         response = client_ai.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt_text
         )
         if response and hasattr(response, 'text') and response.text:
