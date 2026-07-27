@@ -13,9 +13,11 @@ app = Flask(__name__)
 # =========================================================
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 client_ai = None
+
 if GEMINI_API_KEY:
     try:
-        client_ai = genai.Client(api_key=GEMINI_API_KEY)
+        # Extra spaces clean up
+        client_ai = genai.Client(api_key=GEMINI_API_KEY.strip())
     except Exception as e:
         print("Gemini Config Error:", e)
 
@@ -70,7 +72,7 @@ def load_donors_from_mongo():
             if '_id' in donor:
                 del donor['_id']
             if 'password' in donor:
-                del donor['password'] # Security: Hash table এ পাসওয়ার্ড রাখা দরকার নেই
+                del donor['password']
             
             blood = donor.get("blood")
             if blood in donor_hash_table:
@@ -226,36 +228,39 @@ def delete_donor():
     return jsonify({"status": "error", "message": "Donor not found!"}), 404
 
 # =========================================================
-# 5. GEMINI AI CHAT ROUTE (MULTI-MODEL FALLBACK)
+# 5. GEMINI AI CHAT ROUTE (ROBUST ERROR-SAFE VERSION)
 # =========================================================
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
-    if client_ai is None:
-        return jsonify({"status": "error", "reply": "Gemini API Key missing or invalid in Render Environment Variable!"}), 500
+    if not GEMINI_API_KEY or client_ai is None:
+        return jsonify({"status": "error", "reply": "GEMINI_API_KEY is missing or invalid in Render Environment!"}), 500
 
     data = request.json or {}
-    user_prompt = data.get('message', '')
+    user_prompt = data.get('message', '').strip()
     
     if not user_prompt:
         return jsonify({"status": "error", "reply": "Please send a valid message."}), 400
 
-    system_instruction = f"You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice. User query: {user_prompt}"
+    prompt_text = f"You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice.\n\nUser Question: {user_prompt}"
     
-    # Multi-model fallback list (starts with stable gemini-1.5-flash)
-    models_to_try = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
+    # List of models in order of priority
+    models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-lite"]
     
+    last_err = ""
     for model_name in models_to_try:
         try:
             response = client_ai.models.generate_content(
                 model=model_name,
-                contents=system_instruction
+                contents=prompt_text
             )
-            return jsonify({"status": "success", "reply": response.text})
+            if response and hasattr(response, 'text') and response.text:
+                return jsonify({"status": "success", "reply": response.text})
         except Exception as e:
-            time.sleep(1) # Pause 1s before trying fallback model
-            if model_name != models_to_try[-1]:
-                continue
-            return jsonify({"status": "error", "reply": f"Gemini API Error: {str(e)}"}), 500
+            last_err = str(e)
+            time.sleep(1)
+            continue
+
+    return jsonify({"status": "error", "reply": f"AI Error: {last_err}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
