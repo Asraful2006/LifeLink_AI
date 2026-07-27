@@ -1,5 +1,5 @@
 Flask
 gunicorn
 pymongo
-werkzeug
 google-genai
+werkzeug
