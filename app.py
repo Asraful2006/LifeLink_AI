@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from google import genai
 import os
+import time
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
@@ -225,7 +226,7 @@ def delete_donor():
     return jsonify({"status": "error", "message": "Donor not found!"}), 404
 
 # =========================================================
-# 5. GEMINI AI CHAT ROUTE (WITH AUTOMATIC FALLBACK)
+# 5. GEMINI AI CHAT ROUTE (MULTI-MODEL FALLBACK)
 # =========================================================
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
@@ -240,8 +241,8 @@ def ai_chat():
 
     system_instruction = f"You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice. User query: {user_prompt}"
     
-    # Try primary model, fallback to lite if primary hits temporary rate limit
-    models_to_try = ["gemini-2.0-flash", "gemini-2.0-flash-lite"]
+    # Multi-model fallback list (starts with stable gemini-1.5-flash)
+    models_to_try = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
     
     for model_name in models_to_try:
         try:
@@ -251,8 +252,8 @@ def ai_chat():
             )
             return jsonify({"status": "success", "reply": response.text})
         except Exception as e:
-            # If flash hits temporary rate limit, loop will automatically try flash-lite
-            if model_name == models_to_try[0]:
+            time.sleep(1) # Pause 1s before trying fallback model
+            if model_name != models_to_try[-1]:
                 continue
             return jsonify({"status": "error", "reply": f"Gemini API Error: {str(e)}"}), 500
 
