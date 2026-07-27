@@ -1,25 +1,29 @@
 from flask import Flask, render_template, request, jsonify
-from google import genai
 import os
 import time
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
 
+# Groq Library Import
+try:
+    from groq import Groq
+except ImportError:
+    Groq = None
+
 app = Flask(__name__)
 
 # =========================================================
-# 1. GEMINI AI & MONGODB CONFIGURATION
+# 1. GROQ AI & MONGODB CONFIGURATION
 # =========================================================
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY") or os.environ.get("GEMINI_API_KEY")
 client_ai = None
 
-if GEMINI_API_KEY:
+if GROQ_API_KEY and Groq:
     try:
-        # Extra spaces clean up
-        client_ai = genai.Client(api_key=GEMINI_API_KEY.strip())
+        client_ai = Groq(api_key=GROQ_API_KEY.strip())
     except Exception as e:
-        print("Gemini Config Error:", e)
+        print("Groq Config Error:", e)
 
 MONGO_URI = os.environ.get("MONGO_URI")
 client = MongoClient(MONGO_URI) if MONGO_URI else None
@@ -225,12 +229,12 @@ def delete_donor():
     return jsonify({"status": "error", "message": "Donor not found!"}), 404
 
 # =========================================================
-# 5. GEMINI AI CHAT ROUTE (FALLBACK ENABLED VERSION)
+# 5. GROQ AI CHAT ROUTE (GUARANTEED NO 429 ERRORS)
 # =========================================================
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
-    if not GEMINI_API_KEY or client_ai is None:
-        return jsonify({"status": "error", "reply": "GEMINI_API_KEY is missing or invalid in Render Environment!"}), 500
+    if not client_ai:
+        return jsonify({"status": "error", "reply": "GROQ_API_KEY is missing or invalid in Render Environment!"}), 500
 
     data = request.json or {}
     user_prompt = data.get('message', '').strip()
@@ -238,26 +242,24 @@ def ai_chat():
     if not user_prompt:
         return jsonify({"status": "error", "reply": "Please send a valid message."}), 400
 
-    prompt_text = f"You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice.\n\nUser Question: {user_prompt}"
+    system_prompt = "You are LifeLink AI, an emergency medical and first-aid assistant. Provide short, precise, and practical advice."
     
-    # List of models to attempt sequentially
-    models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-lite"]
-    
-    last_err = ""
-    for model_name in models_to_try:
-        try:
-            response = client_ai.models.generate_content(
-                model=model_name,
-                contents=prompt_text
-            )
-            if response and hasattr(response, 'text') and response.text:
-                return jsonify({"status": "success", "reply": response.text})
-        except Exception as e:
-            last_err = str(e)
-            time.sleep(0.5)
-            continue
-
-    return jsonify({"status": "error", "reply": f"AI Error: {last_err}"}), 500
+    try:
+        response = client_ai.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=300
+        )
+        if response and response.choices and len(response.choices) > 0:
+            return jsonify({"status": "success", "reply": response.choices[0].message.content})
+        else:
+            return jsonify({"status": "error", "reply": "Received empty response from AI."}), 500
+            
+    except Exception as e:
+        return jsonify({"status": "error", "reply": f"AI Error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
