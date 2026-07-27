@@ -242,7 +242,7 @@ def ai_chat():
     
     try:
         response = client_ai.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=system_instruction
         )
         return jsonify({"status": "success", "reply": response.text})
